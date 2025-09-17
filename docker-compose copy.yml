@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # MongoDB 데이터베이스
+  mongo:
+    image: mongo:7.0
+    container_name: multi-service-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: gateway_db
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - multi-service-network
+
+  # Node.js API Gateway
+  gateway-node:
+    build: ./gateway-node
+    container_name: multi-service-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://admin:password123@mongo:27017/gateway_db?authSource=admin
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+      JAVA_SERVICE_URL: http://service-java:8080
+      PYTHON_SERVICE_URL: http://service-python:8000
+    depends_on:
+      - mongo
+    networks:
+      - multi-service-network
+    volumes:
+      - ./gateway-node:/app
+      - /app/node_modules
+
+  # Spring Boot File Service
+  service-java:
+    build: ./service-java
+    container_name: multi-service-java
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_S3_REGION: ${AWS_S3_REGION:-us-east-1}
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+    networks:
+      - multi-service-network
+    volumes:
+      - ./service-java:/app
+      - /app/target
+
+  # Python FastAPI Notification Service
+  service-python:
+    build: ./service-python
+    container_name: multi-service-python
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      NAVER_WORKS_BOT_TOKEN: ${NAVER_WORKS_BOT_TOKEN}
+      NAVER_WORKS_API_URL: ${NAVER_WORKS_API_URL:-https://www.worksapis.com/v1.0}
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
+    networks:
+      - multi-service-network
+    volumes:
+      - ./service-python:/app
+
+  # Nginx Reverse Proxy (선택사항)
+  nginx:
+    image: nginx:alpine
+    container_name: multi-service-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - gateway-node
+      - service-java
+      - service-python
+    networks:
+      - multi-service-network
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  multi-service-network:
+    driver: bridge
+

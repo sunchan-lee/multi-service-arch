@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  service-java:
+    build: ./service-java
+    platform: linux/amd64
+    ports:
+      - "8080:8080"
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_REGION: ${AWS_REGION}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  service-python:
+    build: ./service-python
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    environment:
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+      SERVICE_ACCOUNT: ${SERVICE_ACCOUNT}
+      PRIVATE_KEY_PATH: /app/private.key
+    volumes:
+      - ./service-python/private_20250731175819.key:/app/private.key:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  gateway-node:
+    build: ./gateway-node
+    platform: linux/amd64
+    ports:
+      - "5001:5001"
+    depends_on:
+      service-java:
+        condition: service_healthy
+      service-python:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/tasks
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
