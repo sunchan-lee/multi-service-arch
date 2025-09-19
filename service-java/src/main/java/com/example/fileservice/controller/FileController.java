@@ -5,11 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * 파일 컨트롤러
- * - 목적: 파일 업로드 엔드포인트 제공 (프런트/게이트웨이에서 호출)
- * - 경로: /files
- */
 @RestController
 @RequestMapping("/files")
 public class FileController {
@@ -20,11 +15,6 @@ public class FileController {
         this.s3Service = s3Service;
     }
 
-    /**
-     * 파일 업로드
-     * @param file 업로드할 파일 (multipart/form-data)
-     * @return 업로드된 S3 URL JSON
-     */
 @PostMapping("/upload")
 public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
     try {

@@ -49,6 +49,7 @@ router.use(protect); // ✅ 모든 Task API는 JWT 인증 필요
  *       201:
  *         description: Task created successfully
  */
+// ✅ Task 생성
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     let fileUrl = null;
@@ -65,21 +66,22 @@ router.post("/", upload.single("file"), async (req, res) => {
       fileUrl = response.data.url;
     }
 
-    // ✅ Task 생성
+    // ✅ Task 생성 (title + description + fileUrl)
     const task = new Task({
       title: req.body.title,
-      description: req.body.description,
+      description: req.body.description || "",   // description 반영
       fileUrl,
       user: req.user._id,
     });
 
     await task.save();
 
+
     // ✅ Python Notification Service 호출
     try {
       await axios.post(`${PYTHON_SERVICE_URL}/notify`, {
-        userId: req.user.email || req.user._id, // email 또는 userId
-        message: `📌 새로운 할 일이 등록되었습니다: ${task.title}`,
+        userId: req.user.email || req.user._id, 
+        message: `📌 새로운 할 일이 등록되었습니다: ${task.title}\n📝 ${task.description}`,
       });
     } catch (notifyErr) {
       console.warn("⚠️ Notification service unavailable:", notifyErr.message);
@@ -104,9 +106,11 @@ router.post("/", upload.single("file"), async (req, res) => {
  *       200:
  *         description: List of tasks
  */
+// ✅ 모든 Task 조회
 router.get("/", async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user._id });
+    // 🔧 임시로 모든 Task 반환 (MVP)
+    const tasks = await Task.find(); 
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch tasks" });

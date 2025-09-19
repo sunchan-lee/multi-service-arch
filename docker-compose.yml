@@ -23,10 +23,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      CLIENT_ID: ${CLIENT_ID}
-      CLIENT_SECRET: ${CLIENT_SECRET}
-      SERVICE_ACCOUNT: ${SERVICE_ACCOUNT}
-      PRIVATE_KEY_PATH: /app/private.key
+      NAVER_WORKS_CLIENT_ID: ${NAVER_WORKS_CLIENT_ID}
+      NAVER_WORKS_CLIENT_SECRET: ${NAVER_WORKS_CLIENT_SECRET}
+      NAVER_WORKS_SERVICE_ACCOUNT: ${NAVER_WORKS_SERVICE_ACCOUNT}
+      NAVER_WORKS_USER_ID: ${NAVER_WORKS_USER_ID}
+      NAVER_WORKS_BOT_ID: ${NAVER_WORKS_BOT_ID}
+      NAVER_WORKS_PRIVATE_KEY_PATH: /app/private.key
     volumes:
       - ./service-python/private_20250731175819.key:/app/private.key:ro
     healthcheck:
@@ -49,6 +51,8 @@ services:
         condition: service_healthy
     environment:
       - MONGO_URI=mongodb://mongo:27017/tasks
+      - JAVA_SERVICE_URL=http://service-java:8080
+      - PYTHON_SERVICE_URL=http://service-python:8000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -70,3 +74,4 @@ services:
 
 volumes:
   mongo_data:
+

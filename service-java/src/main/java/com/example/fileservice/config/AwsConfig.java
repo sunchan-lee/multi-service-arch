@@ -8,11 +8,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
-/**
- * AWS 설정 구성 클래스
- * - 목적: S3Client 빈을 생성하고 애플리케이션 전체에서 주입하여 사용
- * - 설정: 액세스 키/시크릿/리전은 application.properties 환경변수로 관리
- */
 @Configuration
 public class AwsConfig {
 
@@ -25,10 +20,6 @@ public class AwsConfig {
     @Value("${aws.s3.region}")
     private String region;
 
-    /**
-     * S3 클라이언트 빈 생성
-     * @return Region/자격증명이 적용된 S3Client
-     */
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()

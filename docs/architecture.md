@@ -133,3 +133,4 @@ NAVER_WORKS_BOT_TOKEN=your_bot_token
 4. **AWS S3 접근 실패**: AWS 자격 증명 확인
 5. **Naver Works Bot 오류**: Bot 토큰 및 API URL 확인
 
+
